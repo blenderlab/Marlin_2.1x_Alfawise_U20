@@ -22,6 +22,10 @@ To build Marlin :
 
 make marlin -j 4
 
+or 
+
+./build.sh
+
 firmware is available in the .pio/build/STM32..../ forlder
 
 
