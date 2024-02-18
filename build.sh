@@ -1,1 +1,1 @@
-platformio run --verbose --environment alfawise_U20
+platformio run --verbose --environment STM32F103VE_longer
