@@ -24,14 +24,14 @@
 /**
  * Lock screen implementation for PRO UI
  * Author: Miguel A. Risco-Castillo (MRISCOC)
- * Version: 2.3.2
- * Date: 2022/11/20
+ * Version: 2.2.0
+ * Date: 2022/04/11
  */
 
 #include "../common/encoder.h"
 #include <stdint.h>
 
-class LockScreen {
+class LockScreenClass {
 private:
   static bool unlocked;
   static uint8_t lock_pos;
@@ -43,4 +43,4 @@ public:
   static bool isUnlocked() { return unlocked; }
 };
 
-extern LockScreen lockScreen;
+extern LockScreenClass lockScreen;

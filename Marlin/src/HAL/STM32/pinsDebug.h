@@ -111,14 +111,13 @@ const XrefInfo pin_xref[] PROGMEM = {
 #if NUM_ANALOG_FIRST >= NUM_DIGITAL_PINS
   #define HAS_HIGH_ANALOG_PINS 1
 #endif
-#ifndef NUM_ANALOG_LAST
-  #define NUM_ANALOG_LAST ((NUM_ANALOG_FIRST) + (NUM_ANALOG_INPUTS) - 1)
-#endif
+#define NUM_ANALOG_LAST ((NUM_ANALOG_FIRST) + (NUM_ANALOG_INPUTS) - 1)
 #define NUMBER_PINS_TOTAL ((NUM_DIGITAL_PINS) + TERN0(HAS_HIGH_ANALOG_PINS, NUM_ANALOG_INPUTS))
 #define VALID_PIN(P) (WITHIN(P, 0, (NUM_DIGITAL_PINS) - 1) || TERN0(HAS_HIGH_ANALOG_PINS, WITHIN(P, NUM_ANALOG_FIRST, NUM_ANALOG_LAST)))
 #define digitalRead_mod(Ard_num) extDigitalRead(Ard_num)  // must use Arduino pin numbers when doing reads
 #define PRINT_PIN(Q)
 #define PRINT_PIN_ANALOG(p) do{ sprintf_P(buffer, PSTR(" (A%2d)  "), DIGITAL_PIN_TO_ANALOG_PIN(pin)); SERIAL_ECHO(buffer); }while(0)
+#define PRINT_PORT(ANUM) port_print(ANUM)
 #define DIGITAL_PIN_TO_ANALOG_PIN(ANUM) -1  // will report analog pin number in the print port routine
 
 // x is a variable used to search pin_array
@@ -186,7 +185,7 @@ bool is_digital(const pin_t Ard_num) {
   return pin_mode == MODE_PIN_INPUT || pin_mode == MODE_PIN_OUTPUT;
 }
 
-void print_port(const pin_t Ard_num) {
+void port_print(const pin_t Ard_num) {
   char buffer[16];
   pin_t Index;
   for (Index = 0; Index < NUMBER_PINS_TOTAL; Index++)
@@ -227,6 +226,7 @@ bool pwm_status(const pin_t Ard_num) {
 }
 
 void pwm_details(const pin_t Ard_num) {
+  bool show_timer = false;
   #ifndef STM32F1xx
     if (pwm_status(Ard_num)) {
       uint32_t alt_all = 0;
@@ -265,9 +265,9 @@ void pwm_details(const pin_t Ard_num) {
       SERIAL_ECHOPGM(" - ");
       switch (alt_func) {
         case  0 : SERIAL_ECHOPGM("system (misc. I/O)"); break;
-        case  1 : SERIAL_ECHOPGM("TIM1/TIM2 (probably PWM)"); break;
-        case  2 : SERIAL_ECHOPGM("TIM3..5 (probably PWM)"); break;
-        case  3 : SERIAL_ECHOPGM("TIM8..11 (probably PWM)"); break;
+        case  1 :
+        case  2 :
+        case  3 : SERIAL_ECHOPGM("PWM"); show_timer = true; break;
         case  4 : SERIAL_ECHOPGM("I2C1..3"); break;
         case  5 : SERIAL_ECHOPGM("SPI1/SPI2"); break;
         case  6 : SERIAL_ECHOPGM("SPI3"); break;
@@ -284,5 +284,19 @@ void pwm_details(const pin_t Ard_num) {
     }
   #else
     // TODO: F1 doesn't support changing pins function, so we need to check the function of the PIN and if it's enabled
+    show_timer = true;
   #endif
+
+  if (show_timer && PWM_PIN(Ard_num)) {
+    const PinName dp = digitalPinToPinName(Ard_num);
+    uint32_t func = pinmap_function(dp, PinMap_PWM);
+    if (func != uint32_t(NC)) {
+      TIM_TypeDef *Instance = (TIM_TypeDef *)pinmap_peripheral(dp, PinMap_PWM);
+      uint8_t tim_index = uint8_t(get_timer_index(Instance) + 1);
+      uint8_t tim_chan = uint8_t(STM_PIN_CHANNEL(func));
+      SERIAL_ECHOPGM(" TIM", tim_index);
+      SERIAL_ECHOPGM("_CH", tim_chan);
+    }
+  }
+
 } // pwm_details

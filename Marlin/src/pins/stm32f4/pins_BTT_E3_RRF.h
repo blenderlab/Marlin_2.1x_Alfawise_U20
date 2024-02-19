@@ -51,20 +51,17 @@
 #define Z_STOP_PIN                          PC2   // Z-STOP
 
 #if ENABLED(BTT_E3_RRF_IDEX_BOARD)
-  #define X2_STOP_PIN                   FPC2_PIN  // X2-STOP
+  #if X2_USE_ENDSTOP == _XMAX_
+    #define X_MAX_PIN                   FPC2_PIN  // X2-STOP
+  #elif X2_USE_ENDSTOP == _XMIN_
+    #define X_MIN_PIN                   FPC2_PIN  // X2-STOP
+  #endif
 #endif
 
 //
 // Z Probe must be this pin
 //
 #define Z_MIN_PROBE_PIN                     PC5   // PROBE
-
-//
-// Probe enable
-//
-#if ENABLED(PROBE_ENABLE_DISABLE) && !defined(PROBE_ENABLE_PIN)
-  #define PROBE_ENABLE_PIN            SERVO0_PIN
-#endif
 
 //
 // Filament Runout Sensor
@@ -138,11 +135,8 @@
   #endif
 
   // Reduce baud rate to improve software serial reliability
-  #ifndef TMC_BAUD_RATE
-    #define TMC_BAUD_RATE                  19200
-  #endif
-
-#endif // HAS_TMC_UART
+  #define TMC_BAUD_RATE 19200
+#endif
 
 //
 // Temperature Sensors
@@ -165,7 +159,7 @@
   #define HEATER_1_PIN                 FPC16_PIN  // "HE1"
 #endif
 
-#define FAN0_PIN                            PB5   // "FAN0"
+#define FAN_PIN                             PB5   // "FAN0"
 
 #ifndef CONTROLLER_FAN_PIN
   #define CONTROLLER_FAN_PIN                PB6   // "FAN1"
@@ -181,15 +175,17 @@
 //
 // Misc. Functions
 //
-#ifndef BOARD_NEOPIXEL_PIN
-  #define BOARD_NEOPIXEL_PIN                PB7   // LED driving pin
+#ifndef NEOPIXEL_PIN
+  #define NEOPIXEL_PIN                      PB7   // LED driving pin
 #endif
 
 #ifndef PS_ON_PIN
   #define PS_ON_PIN                         PE1   // Power Supply Control
 #endif
 
-/**               ------
+/**
+ *              BTT E3 RRF
+ *                ------
  * (BEEPER)  PE8 | 1  2 | PE9  (BTN_ENC)
  * (BTN_EN1) PE7 | 3  4 | RESET
  * (BTN_EN2) PB2   5  6 | PE10 (LCD_D4)
@@ -198,28 +194,20 @@
  *                ------
  *                 EXP1
  */
-#define EXP1_01_PIN                         PE8
-#define EXP1_02_PIN                         PE9
-#define EXP1_03_PIN                         PE7
-#define EXP1_04_PIN                         -1    // RESET
-#define EXP1_05_PIN                         PB2
-#define EXP1_06_PIN                         PE10
-#define EXP1_07_PIN                         PB1
-#define EXP1_08_PIN                         PE11
 
 #if HAS_WIRED_LCD
 
-  #if ANY(CR10_STOCKDISPLAY, LCD_FOR_MELZI)
+  #if EITHER(CR10_STOCKDISPLAY, LCD_FOR_MELZI)
 
-    #define BEEPER_PIN               EXP1_01_PIN
+    #define BEEPER_PIN                      PE8
 
-    #define BTN_ENC                  EXP1_02_PIN
-    #define BTN_EN1                  EXP1_03_PIN
-    #define BTN_EN2                  EXP1_05_PIN
+    #define BTN_ENC                         PE9
+    #define BTN_EN1                         PE7
+    #define BTN_EN2                         PB2
 
-    #define LCD_PINS_D4              EXP1_06_PIN
-    #define LCD_PINS_RS              EXP1_07_PIN
-    #define LCD_PINS_EN              EXP1_08_PIN
+    #define LCD_PINS_RS                     PB1
+    #define LCD_PINS_ENABLE                 PE11
+    #define LCD_PINS_D4                     PE10
 
     #if ENABLED(LCD_FOR_MELZI)
 
@@ -263,24 +251,24 @@
       #error "CAUTION! ZONESTAR_LCD requires wiring modifications. See 'pins_BTT_E3_RRF.h' for details. (Define NO_CONTROLLER_CUSTOM_WIRING_WARNING to suppress this warning.)"
     #endif
 
-    #define LCD_PINS_RS              EXP1_06_PIN
-    #define LCD_PINS_EN              EXP1_02_PIN
-    #define LCD_PINS_D4              EXP1_07_PIN
-    #define LCD_PINS_D5              EXP1_05_PIN
-    #define LCD_PINS_D6              EXP1_03_PIN
-    #define LCD_PINS_D7              EXP1_01_PIN
+    #define LCD_PINS_RS                     PE10
+    #define LCD_PINS_ENABLE                 PE9
+    #define LCD_PINS_D4                     PB1
+    #define LCD_PINS_D5                     PB2
+    #define LCD_PINS_D6                     PE7
+    #define LCD_PINS_D7                     PE8
     #define ADC_KEYPAD_PIN                  PB0   // Repurpose servo pin for ADC - CONNECTING TO 5V WILL DAMAGE THE BOARD!
 
-  #elif ANY(MKS_MINI_12864, ENDER2_STOCKDISPLAY)
+  #elif EITHER(MKS_MINI_12864, ENDER2_STOCKDISPLAY)
 
-    #define BTN_ENC                  EXP1_02_PIN
-    #define BTN_EN1                  EXP1_03_PIN
-    #define BTN_EN2                  EXP1_05_PIN
+    #define BTN_ENC                         PE9
+    #define BTN_EN1                         PE7
+    #define BTN_EN2                         PB2
 
-    #define DOGLCD_CS                EXP1_07_PIN
-    #define DOGLCD_A0                EXP1_06_PIN
-    #define DOGLCD_SCK               EXP1_01_PIN
-    #define DOGLCD_MOSI              EXP1_08_PIN
+    #define DOGLCD_CS                       PB1
+    #define DOGLCD_A0                       PE10
+    #define DOGLCD_SCK                      PE8
+    #define DOGLCD_MOSI                     PE11
 
     #define FORCE_SOFT_SPI
     #define LCD_BACKLIGHT_PIN               -1
@@ -322,7 +310,7 @@
        *   EXP1-1 ----------- EXP1-7   SD_DET
        */
 
-      #define TFTGLCD_CS             EXP1_03_PIN
+      #define TFTGLCD_CS                    PE7
 
     #endif
 
@@ -343,7 +331,7 @@
 
 #endif // HAS_WIRED_LCD
 
-#if ALL(TOUCH_UI_FTDI_EVE, LCD_FYSETC_TFT81050)
+#if BOTH(TOUCH_UI_FTDI_EVE, LCD_FYSETC_TFT81050)
 
   #ifndef NO_CONTROLLER_CUSTOM_WIRING_WARNING
     #error "CAUTION! LCD_FYSETC_TFT81050 requires wiring modifications. See 'pins_BTT_E3_RRF.h' for details. (Define NO_CONTROLLER_CUSTOM_WIRING_WARNING to suppress this warning.)"
@@ -379,10 +367,10 @@
 
   #define CLCD_SPI_BUS                         1  // SPI1 connector
 
-  #define BEEPER_PIN                 EXP1_02_PIN
+  #define BEEPER_PIN                        PE9
 
-  #define CLCD_MOD_RESET             EXP1_03_PIN
-  #define CLCD_SPI_CS                EXP1_07_PIN
+  #define CLCD_MOD_RESET                    PE7
+  #define CLCD_SPI_CS                       PB1
 
 #endif // TOUCH_UI_FTDI_EVE && LCD_FYSETC_TFT81050
 
@@ -395,23 +383,22 @@
 #endif
 
 #if SD_CONNECTION_IS(ONBOARD)
-  #define ONBOARD_SDIO                            // Use SDIO for onboard SD
+  #define SDIO_SUPPORT                            // Use SDIO for onboard SD
   //#define SDIO_CLOCK                  48000000
   #define SD_DETECT_PIN                     PC4
 #elif SD_CONNECTION_IS(CUSTOM_CABLE)
   #error "SD CUSTOM_CABLE is not compatible with BTT E3 RRF."
 #endif
 
-#if ENABLED(WIFISUPPORT)
-  //
-  // WIFI
-  //
-  #define ESP_WIFI_MODULE_COM                  3  // Must also set either SERIAL_PORT or SERIAL_PORT_2 to this
-  #define ESP_WIFI_MODULE_BAUDRATE      BAUDRATE  // Must use same BAUDRATE as SERIAL_PORT & SERIAL_PORT_2
-  #define ESP_WIFI_MODULE_RESET_PIN         PA4
-  #define ESP_WIFI_MODULE_ENABLE_PIN        PA5
-  #define ESP_WIFI_MODULE_GPIO0_PIN         PA6
-#endif
+//
+// WIFI
+//
+
+#define ESP_WIFI_MODULE_COM                    3  // Must also set either SERIAL_PORT or SERIAL_PORT_2 to this
+#define ESP_WIFI_MODULE_BAUDRATE        BAUDRATE  // Must use same BAUDRATE as SERIAL_PORT & SERIAL_PORT_2
+#define ESP_WIFI_MODULE_RESET_PIN           PA4
+#define ESP_WIFI_MODULE_ENABLE_PIN          PA5
+#define ESP_WIFI_MODULE_GPIO0_PIN           PA6
 
 #if ENABLED(BTT_E3_RRF_IDEX_BOARD)
   #define FPC2_PIN                          PB11

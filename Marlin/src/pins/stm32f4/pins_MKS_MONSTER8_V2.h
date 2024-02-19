@@ -58,7 +58,6 @@
   #define WIFI_RESET_PIN                    PD14  // MKS ESP WIFI RESET PIN
 #endif
 
-// The FYSETC_MINI_12864_2_1 uses one of the EXP pins
-#define BOARD_NEOPIXEL_PIN                  PC5
+#define NEOPIXEL_PIN                        PC5
 
 #include "pins_MKS_MONSTER8_common.h"

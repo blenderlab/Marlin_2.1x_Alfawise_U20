@@ -1,9 +1,9 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
- * Based on Sprinter and grbl.
- * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2016 Bob Cousins bobcousins42@googlemail.com
+ * Copyright (c) 2017 Victor Perez
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@
 #define ACMD41_SD_APP_OP_COND                         (uint16_t)(SDMMC_ACMD_SD_APP_OP_COND | SDIO_CMD_WAIT_SHORT_RESP)
 #define ACMD42_SD_APP_SET_CLR_CARD_DETECT             (uint16_t)(SDMMC_ACMD_SD_APP_SET_CLR_CARD_DETECT | SDIO_CMD_WAIT_SHORT_RESP)
 
+
 #define SDMMC_ALLZERO                        0x00000000U
 #define SDMMC_OCR_ERRORBITS                  0xFDFFE008U
 
@@ -101,6 +102,11 @@
 
 #ifndef SDIO_CLOCK
   #define SDIO_CLOCK                         18000000       /* 18 MHz */
+#endif
+
+#ifdef OVERCLOCK
+  #undef SDIO_CLOCK
+  #define SDIO_CLOCK ((18000000*OC_BASE_MHZ)/OC_TARGET_MHZ) /* 18 MHz */
 #endif
 
 #ifndef SDIO_READ_RETRIES

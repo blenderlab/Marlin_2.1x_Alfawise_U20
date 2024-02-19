@@ -121,7 +121,7 @@
 #endif
 
 #define EXTRUSION_MULTIPLIER 1.0
-#define PRIME_LENGTH 10.0
+#define PRIME_LENGTH 20.0
 #define OOZE_AMOUNT 0.3
 
 #define INTERSECTION_CIRCLE_RADIUS 5
@@ -162,8 +162,8 @@ float g26_random_deviation = 0.0;
    */
   bool user_canceled() {
     if (!ui.button_pressed()) return false; // Return if the button isn't pressed
-    LCD_MESSAGE_MAX(MSG_G26_CANCELED);
-    ui.quick_feedback();
+    ui.set_status(GET_TEXT_F(MSG_G26_CANCELED), 99);
+    TERN_(HAS_MARLINUI_MENU, ui.quick_feedback());
     ui.wait_for_release();
     return true;
   }
@@ -321,9 +321,11 @@ typedef struct {
     #if HAS_HEATED_BED
 
       if (bed_temp > 25) {
-        LCD_MESSAGE_MAX(MSG_G26_HEATING_BED);
-        ui.quick_feedback();
-        TERN_(HAS_MARLINUI_MENU, ui.capture());
+        #if HAS_WIRED_LCD
+          ui.set_status(GET_TEXT_F(MSG_G26_HEATING_BED), 99);
+          ui.quick_feedback();
+          TERN_(HAS_MARLINUI_MENU, ui.capture());
+        #endif
         thermalManager.setTargetBed(bed_temp);
 
         // Wait for the temperature to stabilize
@@ -338,16 +340,20 @@ typedef struct {
     #endif // HAS_HEATED_BED
 
     // Start heating the active nozzle
-    LCD_MESSAGE_MAX(MSG_G26_HEATING_NOZZLE);
-    ui.quick_feedback();
+    #if HAS_WIRED_LCD
+      ui.set_status(GET_TEXT_F(MSG_G26_HEATING_NOZZLE), 99);
+      ui.quick_feedback();
+    #endif
     thermalManager.setTargetHotend(hotend_temp, active_extruder);
 
     // Wait for the temperature to stabilize
     if (!thermalManager.wait_for_hotend(active_extruder, true OPTARG(G26_CLICK_CAN_CANCEL, true)))
       return G26_ERR;
 
-    ui.reset_status();
-    ui.completion_feedback();
+    #if HAS_WIRED_LCD
+      ui.reset_status();
+      ui.quick_feedback();
+    #endif
 
     return G26_OK;
   }
@@ -365,7 +371,7 @@ typedef struct {
 
       if (prime_flag == -1) {  // The user wants to control how much filament gets purged
         ui.capture();
-        LCD_MESSAGE_MAX(MSG_G26_MANUAL_PRIME);
+        ui.set_status(GET_TEXT_F(MSG_G26_MANUAL_PRIME), 99);
         ui.chirp();
 
         destination = current_position;
@@ -392,15 +398,17 @@ typedef struct {
 
         ui.wait_for_release();
 
-        LCD_MESSAGE_MAX(MSG_G26_PRIME_DONE);
+        ui.set_status(GET_TEXT_F(MSG_G26_PRIME_DONE), 99);
         ui.quick_feedback();
         ui.release();
       }
       else
     #endif
     {
-      LCD_MESSAGE_MAX(MSG_G26_FIXED_LENGTH);
-      ui.quick_feedback();
+      #if HAS_WIRED_LCD
+        ui.set_status(GET_TEXT_F(MSG_G26_FIXED_LENGTH), 99);
+        ui.quick_feedback();
+      #endif
       destination = current_position;
       destination.e += prime_length;
       prepare_internal_move_to_destination(fr_slow_e);
@@ -501,10 +509,8 @@ void GcodeSuite::G26() {
   // or if the parameter parsing did not go OK, abort
   if (homing_needed_error()) return;
 
-  #if HAS_TOOLCHANGE
-    // Change the tool first, if specified
-    if (parser.seenval('T')) tool_change(parser.value_int());
-  #endif
+  // Change the tool first, if specified
+  if (parser.seenval('T')) tool_change(parser.value_int());
 
   g26_helper_t g26;
 
@@ -532,7 +538,7 @@ void GcodeSuite::G26() {
 
     if (bedtemp) {
       if (!WITHIN(bedtemp, 40, BED_MAX_TARGET)) {
-        SERIAL_ECHOLNPGM(GCODE_ERR_MSG("Specified bed temperature not plausible (40-", BED_MAX_TARGET, "C)."));
+        SERIAL_ECHOLNPGM("?Specified bed temperature not plausible (40-", BED_MAX_TARGET, "C).");
         return;
       }
       g26.bed_temp = bedtemp;
@@ -543,7 +549,7 @@ void GcodeSuite::G26() {
   if (parser.seenval('L')) {
     g26.layer_height = parser.value_linear_units();
     if (!WITHIN(g26.layer_height, 0.0, 2.0)) {
-      SERIAL_ECHOLNPGM(GCODE_ERR_MSG("Specified layer height not plausible."));
+      SERIAL_ECHOLNPGM("?Specified layer height not plausible.");
       return;
     }
   }
@@ -552,12 +558,12 @@ void GcodeSuite::G26() {
     if (parser.has_value()) {
       g26.retraction_multiplier = parser.value_float();
       if (!WITHIN(g26.retraction_multiplier, 0.05, 15.0)) {
-        SERIAL_ECHOLNPGM(GCODE_ERR_MSG("Specified Retraction Multiplier not plausible."));
+        SERIAL_ECHOLNPGM("?Specified Retraction Multiplier not plausible.");
         return;
       }
     }
     else {
-      SERIAL_ECHOLNPGM(GCODE_ERR_MSG("Retraction Multiplier must be specified."));
+      SERIAL_ECHOLNPGM("?Retraction Multiplier must be specified.");
       return;
     }
   }
@@ -565,7 +571,7 @@ void GcodeSuite::G26() {
   if (parser.seenval('S')) {
     g26.nozzle = parser.value_float();
     if (!WITHIN(g26.nozzle, 0.1, 2.0)) {
-      SERIAL_ECHOLNPGM(GCODE_ERR_MSG("Specified nozzle size not plausible."));
+      SERIAL_ECHOLNPGM("?Specified nozzle size not plausible.");
       return;
     }
   }
@@ -575,7 +581,7 @@ void GcodeSuite::G26() {
       #if HAS_MARLINUI_MENU
         g26.prime_flag = -1;
       #else
-        SERIAL_ECHOLNPGM(GCODE_ERR_MSG("Prime length must be specified when not using an LCD."));
+        SERIAL_ECHOLNPGM("?Prime length must be specified when not using an LCD.");
         return;
       #endif
     }
@@ -583,7 +589,7 @@ void GcodeSuite::G26() {
       g26.prime_flag++;
       g26.prime_length = parser.value_linear_units();
       if (!WITHIN(g26.prime_length, 0.0, 25.0)) {
-        SERIAL_ECHOLNPGM(GCODE_ERR_MSG("Specified prime length not plausible."));
+        SERIAL_ECHOLNPGM("?Specified prime length not plausible.");
         return;
       }
     }
@@ -592,7 +598,7 @@ void GcodeSuite::G26() {
   if (parser.seenval('F')) {
     g26.filament_diameter = parser.value_linear_units();
     if (!WITHIN(g26.filament_diameter, 1.0, 4.0)) {
-      SERIAL_ECHOLNPGM(GCODE_ERR_MSG("Specified filament size not plausible."));
+      SERIAL_ECHOLNPGM("?Specified filament size not plausible.");
       return;
     }
   }
@@ -615,8 +621,8 @@ void GcodeSuite::G26() {
 
   // If any preset or temperature was specified
   if (noztemp) {
-    if (!WITHIN(noztemp, 165, thermalManager.hotend_max_target(active_extruder))) {
-      SERIAL_ECHOLNPGM(GCODE_ERR_MSG("Specified nozzle temperature not plausible."));
+    if (!WITHIN(noztemp, 165, (HEATER_0_MAXTEMP) - (HOTEND_OVERSHOOT))) {
+      SERIAL_ECHOLNPGM("?Specified nozzle temperature not plausible.");
       return;
     }
     g26.hotend_temp = noztemp;
@@ -630,19 +636,19 @@ void GcodeSuite::G26() {
   }
 
   // Get repeat from 'R', otherwise do one full circuit
-  grid_count_t g26_repeats;
+  int16_t g26_repeats;
   #if HAS_MARLINUI_MENU
     g26_repeats = parser.intval('R', GRID_MAX_POINTS + 1);
   #else
     if (parser.seen('R'))
       g26_repeats = parser.has_value() ? parser.value_int() : GRID_MAX_POINTS + 1;
     else {
-      SERIAL_ECHOLNPGM(GCODE_ERR_MSG("(R)epeat must be specified when not using an LCD."));
+      SERIAL_ECHOLNPGM("?(R)epeat must be specified when not using an LCD.");
       return;
     }
   #endif
   if (g26_repeats < 1) {
-    SERIAL_ECHOLNPGM(GCODE_ERR_MSG("(R)epeat value not plausible; must be at least 1."));
+    SERIAL_ECHOLNPGM("?(R)epeat value not plausible; must be at least 1.");
     return;
   }
 
@@ -650,7 +656,7 @@ void GcodeSuite::G26() {
   g26.xy_pos.set(parser.seenval('X') ? RAW_X_POSITION(parser.value_linear_units()) : current_position.x,
                  parser.seenval('Y') ? RAW_Y_POSITION(parser.value_linear_units()) : current_position.y);
   if (!position_is_reachable(g26.xy_pos)) {
-    SERIAL_ECHOLNPGM(GCODE_ERR_MSG("Specified X,Y coordinate out of bounds."));
+    SERIAL_ECHOLNPGM("?Specified X,Y coordinate out of bounds.");
     return;
   }
 
@@ -709,7 +715,7 @@ void GcodeSuite::G26() {
       #error "A_CNT must be a positive value. Please change A_INT."
     #endif
     float trig_table[A_CNT];
-    for (uint8_t i = 0; i < A_CNT; ++i)
+    LOOP_L_N(i, A_CNT)
       trig_table[i] = INTERSECTION_CIRCLE_RADIUS * cos(RADIANS(i * A_INT));
 
   #endif // !ARC_SUPPORT
@@ -847,7 +853,7 @@ void GcodeSuite::G26() {
   } while (--g26_repeats && location.valid());
 
   LEAVE:
-  LCD_MESSAGE_MIN(MSG_G26_LEAVING);
+  ui.set_status(GET_TEXT_F(MSG_G26_LEAVING), -1);
   TERN_(EXTENSIBLE_UI, ExtUI::onMeshUpdate(location, ExtUI::G26_FINISH));
 
   g26.retract_filament(destination);

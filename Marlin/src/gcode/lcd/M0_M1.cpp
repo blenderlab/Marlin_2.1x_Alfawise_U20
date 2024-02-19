@@ -58,7 +58,7 @@ void GcodeSuite::M0_M1() {
   #if HAS_MARLINUI_MENU
 
     if (parser.string_arg)
-      ui.set_status_no_expire(parser.string_arg);
+      ui.set_status(parser.string_arg, true);
     else {
       LCD_MESSAGE(MSG_USERWAIT);
       #if ENABLED(LCD_PROGRESS_BAR) && PROGRESS_MSG_EXPIRE > 0
@@ -73,9 +73,9 @@ void GcodeSuite::M0_M1() {
       ExtUI::onUserConfirmRequired(GET_TEXT_F(MSG_USERWAIT));
   #elif ENABLED(DWIN_LCD_PROUI)
     if (parser.string_arg)
-      dwinPopupConfirm(ICON_BLTouch, parser.string_arg, GET_TEXT_F(MSG_USERWAIT));
+      DWIN_Popup_Confirm(ICON_BLTouch, parser.string_arg, GET_TEXT_F(MSG_USERWAIT));
     else
-      dwinPopupConfirm(ICON_BLTouch, GET_TEXT_F(MSG_STOPPED), GET_TEXT_F(MSG_USERWAIT));
+      DWIN_Popup_Confirm(ICON_BLTouch, GET_TEXT_F(MSG_STOPPED), GET_TEXT_F(MSG_USERWAIT));
   #else
 
     if (parser.string_arg) {
@@ -87,9 +87,9 @@ void GcodeSuite::M0_M1() {
 
   #if ENABLED(HOST_PROMPT_SUPPORT)
     if (parser.string_arg)
-      hostui.continue_prompt(parser.string_arg);
+      hostui.prompt_do(PROMPT_USER_CONTINUE, parser.string_arg, FPSTR(CONTINUE_STR));
     else
-      hostui.continue_prompt(parser.codenum ? F("M1 Stop") : F("M0 Stop"));
+      hostui.prompt_do(PROMPT_USER_CONTINUE, parser.codenum ? F("M1 Stop") : F("M0 Stop"), FPSTR(CONTINUE_STR));
   #endif
 
   TERN_(HAS_RESUME_CONTINUE, wait_for_user_response(ms));

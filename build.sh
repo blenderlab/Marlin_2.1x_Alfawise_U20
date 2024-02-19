@@ -1,3 +1,3 @@
-mkdir build
-platformio run --verbose --environment STM32F103VE_longer_maple
-mv .pio/build/STM32F103VE_longer_maple/project.bin build/
+platformio run --verbose --environment alfawise_U20
+mkdir -p .histo
+cp out/project.bin .histo/`date --iso-8601`.bin

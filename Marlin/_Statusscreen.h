@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (C) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (C) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
 
@@ -24,7 +24,7 @@
  * and enable CUSTOM_STATUS_SCREEN_IMAGE in Configuration.h.
  *
  * Use the Marlin Bitmap Converter to make your own:
- * http://marlinfw.org/tools/u8glib/converter.html
+ * https://marlinfw.org/tools/u8glib/converter.html
  */
 
 #pragma once
@@ -33,7 +33,7 @@
 // Status Screen Logo bitmap
 //
 #define STATUS_LOGO_Y            0
-#define STATUS_LOGO_WIDTH       36
+#define STATUS_LOGO_WIDTH       38
 
 static unsigned char status_logo_bmp[] PROGMEM = {
 
@@ -131,20 +131,13 @@ static unsigned char status_logo_bmp[] PROGMEM = {
 */
 };
 
-#define LOGO_CHARS sizeof(status_logo_bmp)
-
+//#define LOGO_CHARS sizeof(status_logo_bmp)
 
 //
 // Use default bitmaps
 //
 #define STATUS_HOTEND_ANIM
 #define STATUS_BED_ANIM
-#if HOTENDS < 2
-  #define STATUS_LOGO_X          0
-  #define STATUS_HEATERS_X      50
-  #define STATUS_BED_X          74
-#else
-  #define STATUS_LOGO_X          0
-  #define STATUS_HEATERS_X      32
-  #define STATUS_BED_X          80
-#endif
+#define STATUS_LOGO_X          0
+#define STATUS_HEATERS_X      50
+#define STATUS_BED_X          74
